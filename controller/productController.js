@@ -17,13 +17,25 @@ const createProduct = async (req, res) => {
 
 const showAllProducts = async (req, res) => {
   try {
-    const jobs = await productModel.find({});
-    res.status(200).json({ jobs });
+    const { page = 1, limit = 12, search = '' } = req.query;
+    const skip = (page - 1) * limit;
+    const searchQuery = search ? { name: new RegExp(search, 'i') } : {};
+
+    const products = await productModel.find(searchQuery).skip(skip).limit(parseInt(limit));
+    const totalProducts = await productModel.countDocuments(searchQuery);
+
+    res.status(200).json({
+      totalProducts,
+      totalPages: Math.ceil(totalProducts / limit),
+      currentPage: parseInt(page),
+      products
+    });
   } catch (error) {
     res.status(500).send({
       message: "Error getting products",
     });
   }
 };
+
 
 module.exports = { createProduct, showAllProducts };
