@@ -1,4 +1,5 @@
 const productModel = require("../model/productModel");
+const { ObjectId } = require("mongodb");
 
 const createProduct = async (req, res) => {
   try {
@@ -17,18 +18,21 @@ const createProduct = async (req, res) => {
 
 const showAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 12, search = '' } = req.query;
+    const { page = 1, limit = 12, search = "" } = req.query;
     const skip = (page - 1) * limit;
-    const searchQuery = search ? { name: new RegExp(search, 'i') } : {};
+    const searchQuery = search ? { name: new RegExp(search, "i") } : {};
 
-    const products = await productModel.find(searchQuery).skip(skip).limit(parseInt(limit));
+    const products = await productModel
+      .find(searchQuery)
+      .skip(skip)
+      .limit(parseInt(limit));
     const totalProducts = await productModel.countDocuments(searchQuery);
 
     res.status(200).json({
       totalProducts,
       totalPages: Math.ceil(totalProducts / limit),
       currentPage: parseInt(page),
-      products
+      products,
     });
   } catch (error) {
     res.status(500).send({
@@ -37,5 +41,31 @@ const showAllProducts = async (req, res) => {
   }
 };
 
+const showProduct = async (req, res) => {
+  try {
+    const id = req.params.id;
 
-module.exports = { createProduct, showAllProducts };
+    // Validate the ObjectId
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid product ID" });
+    }
+
+    // Find the product by _id
+    const product = await productModel.findOne({ _id: new ObjectId(id) });
+    console.log("#",product)
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    res.status(200).send({ product });
+  } catch (error) {
+    res.status(500).send({
+      message: "Error getting product",
+    });
+  }
+};
+
+module.exports = { createProduct, showAllProducts, showProduct };
+
+// https://i.ibb.co/5sKcthD/image.png
+// https://i.ibb.co/tJYH49c/image.png
