@@ -18,14 +18,24 @@ const createProduct = async (req, res) => {
 
 const showAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 12, search = "" } = req.query;
+    const { page = 1, limit = 12, search = "", category = "" } = req.query;
     const skip = (page - 1) * limit;
-    const searchQuery = search ? { name: new RegExp(search, "i") } : {};
 
+    // Build the search query
+    let searchQuery = {};
+    if (search) {
+      searchQuery.name = new RegExp(search, "i");
+    }
+    if (category) {
+      searchQuery.category = category;
+    }
+
+    // Get the filtered and paginated products
     const products = await productModel
       .find(searchQuery)
       .skip(skip)
       .limit(parseInt(limit));
+      
     const totalProducts = await productModel.countDocuments(searchQuery);
 
     res.status(200).json({
@@ -41,6 +51,7 @@ const showAllProducts = async (req, res) => {
   }
 };
 
+
 const showProduct = async (req, res) => {
   try {
     const id = req.params.id;
@@ -52,7 +63,7 @@ const showProduct = async (req, res) => {
 
     // Find the product by _id
     const product = await productModel.findOne({ _id: new ObjectId(id) });
-    console.log("#",product)
+    // console.log("#",product)
     if (!product) {
       return res.status(404).send({ message: "Product not found" });
     }
@@ -67,5 +78,3 @@ const showProduct = async (req, res) => {
 
 module.exports = { createProduct, showAllProducts, showProduct };
 
-// https://i.ibb.co/5sKcthD/image.png
-// https://i.ibb.co/tJYH49c/image.png
